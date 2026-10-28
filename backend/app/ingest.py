@@ -1,5 +1,7 @@
 # Get a repo onto disk and pick which files to index
 import re
+import subprocess
+from pathlib import Path
 
 # Only plain public GitHub links
 GITHUB_URL = re.compile(r"^https://github\.com/[w.-]+/[w.-]+/?$")
@@ -34,3 +36,16 @@ MAX_BYTES = 200,000
 def clone_repo(url: str, dest: Path) -> str:
     if not GITHUB_URL.match(url):
         raise ValueError(f"Not a valid public GitHub repo URL: {url}")
+
+
+    # Download only latest commit
+    subprocess.run(
+        ["git", "clone", "--depth", "1", url, str(dest)],
+        check=True, capture_output=True, text=True,
+    )
+    result = subprocess.run(
+        ["git", "-C", str(dest), "rev-parse", "HEAD"],
+        check=True, capture_output=True, text=True,
+    )
+
+    return result.stdout.strip()
